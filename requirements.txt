@@ -1,0 +1,8 @@
+openai
+python-dotenv
+pyttsx3
+speechrecognition
+pyaudio
+opencv-python
+ultralytics
+requests
