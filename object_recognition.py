@@ -1,68 +1,81 @@
-# vision/object_recognition.py
-
+import os
 import cv2
-from ultralytics import YOLO
-import concurrent.futures
-from typing import List, Dict
 import time
+from ultralytics import YOLO
+from ai_modules.online_ai import get_online_response
+
+# Load YOLOv8x model (you can replace with a custom model path)
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "yolov8x.pt")
 
 class ObjectRecognizer:
     def __init__(self):
         self.model = None
-        self.cap = None
-        self._init_model()
-        
-    def _init_model(self):
-        """Lazy load YOLOv8 model for faster startup."""
-        if self.model is None:
-            self.model = YOLO('yolov8n.pt')
-    
-    def recognize_objects(self) -> List[Dict]:
-        """Perform object recognition using webcam with timeout and threading."""
-        start_time = time.time()
+        self.load_model()
+
+    def load_model(self):
         try:
-            self.cap = cv2.VideoCapture(0)
-            if not self.cap.isOpened():
-                return [{"error": "Camera initialization failed"}]
-            
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            
-            objects_detected = set()
-            last_detection_time = time.time()
-            
-            while (time.time() - last_detection_time) < 5:
-                ret, frame = self.cap.read()
-                if not ret:
-                    continue
-                
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(self.model, frame)
-                    try:
-                        results = future.result(timeout=1.0)
-                        detected = results[0]
-                        current_objects = {self.model.names[int(cls)] for cls in detected.boxes.cls}
-                        if current_objects:
-                            objects_detected.update(current_objects)
-                            last_detection_time = time.time()
-                        
-                        cv2.imshow("Object Recognition", detected.plot())
-                        if cv2.waitKey(1) & 0xFF == ord('q'):
-                            break
-                    except concurrent.futures.TimeoutError:
-                        continue
-            
-            return [{
-                "objects": list(objects_detected),
-                "processing_time": time.time() - start_time
-            }] if objects_detected else [{"message": "No objects detected"}]
-        
+            self.model = YOLO(MODEL_PATH)
         except Exception as e:
-            return [{"error": f"Recognition failed: {str(e)}"}]
-        
+            print(f"❌ Failed to load YOLO model: {e}")
+            self.model = None
+
+    def recognize_objects(self, image_path=None, online_mode=False):
+        # If scanning from file
+        if image_path:
+            image = cv2.imread(image_path)
+            if image is None:
+                return [f"❌ Failed to read image at {image_path}"]
+            return self._process_image(image, online_mode)
+
+        # If scanning from webcam
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            return ["❌ Camera not available"]
+
+        print("🔍 Press 'q' to stop scanning.")
+        results = []
+
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                cv2.imshow("Scanning... (press 'q' to quit)", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    results = self._process_image(frame, online_mode)
+                    break
         finally:
-            if self.cap and self.cap.isOpened():
-                self.cap.release()
+            cap.release()
             cv2.destroyAllWindows()
 
+        return results
+
+    def _process_image(self, image, online_mode=False):
+        if self.model is None:
+            return ["❌ Model not loaded"]
+
+        results = self.model(image)[0]
+        names = self.model.names
+        detected = set()
+
+        for box in results.boxes:
+            cls = int(box.cls[0])
+            name = names.get(cls, f"class_{cls}")
+            detected.add(name)
+
+        if not detected:
+            return ["No objects detected."]
+
+        output = []
+        for obj in detected:
+            if online_mode:
+                prompt = f"What is a '{obj}' and what is it used for?"
+                desc, _ = get_online_response(prompt)
+                output.append(f"{obj.capitalize()}: {desc}")
+            else:
+                output.append(f"Detected: {obj}")
+
+        return output
+
+# Singleton instance
 object_recognizer = ObjectRecognizer()

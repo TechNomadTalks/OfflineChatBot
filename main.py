@@ -18,8 +18,6 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_PROJECT_ID = os.getenv("OPENAI_PROJECT_ID")
 
-# Removed DEBUG prints to clean console output
-
 online_mode = False
 memory_enabled = True
 plugins = {}
@@ -49,7 +47,8 @@ def handle_file_upload(filepath):
     ext = os.path.splitext(filepath)[1].lower()
     if ext in [".jpg", ".jpeg", ".png", ".bmp"]:
         try:
-            return object_recognizer.recognize_objects(filepath)
+            # Pass the current online_mode to get online descriptions if enabled
+            return object_recognizer.recognize_objects(filepath, online_mode=online_mode)
         except Exception as e:
             return f"❌ Image processing error: {e}"
     elif ext == ".txt":
@@ -108,7 +107,7 @@ def main():
 
             if user_input.lower() == "scan":
                 print("🔍 Scanning using camera...")
-                results = object_recognizer.recognize_objects()
+                results = object_recognizer.recognize_objects(online_mode=online_mode)
                 for res in results:
                     print(res)
                 continue
