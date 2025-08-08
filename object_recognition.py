@@ -4,8 +4,7 @@ import time
 from ultralytics import YOLO
 from ai_modules.online_ai import get_online_response
 
-# Load YOLOv8x model (you can replace with a custom model path)
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "yolov8x.pt")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "yolov8n.pt")  # use yolov8n model for speed
 
 class ObjectRecognizer:
     def __init__(self):
@@ -20,47 +19,80 @@ class ObjectRecognizer:
             self.model = None
 
     def recognize_objects(self, image_path=None, online_mode=False):
-        # If scanning from file
         if image_path:
             image = cv2.imread(image_path)
             if image is None:
                 return [f"❌ Failed to read image at {image_path}"]
             return self._process_image(image, online_mode)
 
-        # If scanning from webcam
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
             return ["❌ Camera not available"]
 
         print("🔍 Press 'q' to stop scanning.")
-        results = []
+        results_texts = []
 
         try:
             while True:
                 ret, frame = cap.read()
                 if not ret:
                     break
-                cv2.imshow("Scanning... (press 'q' to quit)", frame)
+
+                results = self.model(frame)[0]
+
+                # Draw bounding boxes with colors by confidence
+                for box in results.boxes:
+                    cls = int(box.cls[0])
+                    conf = box.conf[0].item()
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    name = self.model.names.get(cls, f"class_{cls}")
+
+                    # Color logic by confidence
+                    if conf > 0.75:
+                        color = (0, 255, 0)  # green
+                    elif conf > 0.4:
+                        color = (0, 255, 255)  # yellow
+                    else:
+                        color = (0, 0, 255)  # red
+
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+                    label = f"{name} {conf*100:.1f}%"
+                    cv2.putText(frame, label, (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+                cv2.imshow("Real-time Object Detection (press 'q' to quit)", frame)
+
                 if cv2.waitKey(1) & 0xFF == ord('q'):
-                    results = self._process_image(frame, online_mode)
+                    # On quit, return summary texts
+                    detected = set()
+                    for box in results.boxes:
+                        cls = int(box.cls[0])
+                        conf = box.conf[0].item()
+                        name = self.model.names.get(cls, f"class_{cls}")
+                        detected.add(f"{name} ({conf*100:.1f}%)")
+
+                    if not detected:
+                        results_texts.append("No objects detected.")
+                    else:
+                        results_texts.extend([f"Detected: {obj}" for obj in detected])
                     break
+
         finally:
             cap.release()
             cv2.destroyAllWindows()
 
-        return results
+        return results_texts
 
     def _process_image(self, image, online_mode=False):
         if self.model is None:
             return ["❌ Model not loaded"]
 
         results = self.model(image)[0]
-        names = self.model.names
         detected = set()
 
         for box in results.boxes:
             cls = int(box.cls[0])
-            name = names.get(cls, f"class_{cls}")
+            name = self.model.names.get(cls, f"class_{cls}")
             detected.add(name)
 
         if not detected:
@@ -77,5 +109,4 @@ class ObjectRecognizer:
 
         return output
 
-# Singleton instance
 object_recognizer = ObjectRecognizer()

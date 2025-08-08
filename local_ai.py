@@ -9,7 +9,6 @@ class LocalAI:
         self.timeout = 30
 
     def generate_response(self, prompt: str, chat_history: Optional[List[Dict]] = None) -> Tuple[str, float]:
-        # chat_history currently unused but included for interface consistency
         start_time = time.time()
         try:
             response = requests.post(
@@ -28,5 +27,4 @@ class LocalAI:
         except requests.exceptions.RequestException as e:
             return f"Local AI error: {e}", round(time.time() - start_time, 2)
 
-# Singleton instance for use in main.py
 local_ai = LocalAI()
