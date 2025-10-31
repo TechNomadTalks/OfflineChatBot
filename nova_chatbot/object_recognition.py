@@ -2,9 +2,8 @@ import os
 import cv2
 import time
 from ultralytics import YOLO
-from ai_modules.online_ai import get_online_response
-
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "yolov8n.pt")  # use yolov8n model for speed
+from .online_ai import get_online_response
+from .config import config
 
 class ObjectRecognizer:
     def __init__(self):
@@ -13,7 +12,9 @@ class ObjectRecognizer:
 
     def load_model(self):
         try:
-            self.model = YOLO(MODEL_PATH)
+            model_name = config.get('object_recognition', 'model', 'yolov8n.pt')
+            model_path = os.path.join(os.path.dirname(__file__), '..', model_name)
+            self.model = YOLO(model_path)
         except Exception as e:
             print(f"❌ Failed to load YOLO model: {e}")
             self.model = None

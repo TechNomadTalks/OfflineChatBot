@@ -1,13 +1,12 @@
 import time
 import openai
 
-client = openai.OpenAI()  # Uses env vars like OPENAI_API_KEY
-
 def get_online_response(prompt: str) -> tuple[str, float]:
     start_time = time.time()
     full_response = ""
 
     try:
+        client = openai.OpenAI()  # Uses env vars like OPENAI_API_KEY
         stream = client.chat.completions.create(
             model="gpt-4o-mini",  # or your preferred model
             messages=[{"role": "user", "content": prompt}],

@@ -3,12 +3,12 @@ import time
 from typing import List, Dict, Tuple, Optional
 
 class LocalAI:
-    def __init__(self, model_name: str = "phi", base_url: str = "http://localhost:11434/api/generate"):
+    def __init__(self, model_name: str = "phi-3", base_url: str = "http://localhost:11434/api/generate"):
         self.model_name = model_name
         self.base_url = base_url
-        self.timeout = 30
+        self.timeout = 60 # Increased timeout for larger models
 
-    def generate_response(self, prompt: str, chat_history: Optional[List[Dict]] = None) -> Tuple[str, float]:
+    def generate_local_response(self, prompt: str, chat_history: Optional[List[Dict]] = None) -> Tuple[str, float]:
         start_time = time.time()
         try:
             response = requests.post(
