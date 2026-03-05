@@ -1,7 +1,10 @@
 import random
-from utils.memory import recall_memory
+from .memory import recall_memory
+
 
 class Personality:
+    """Personality system for Nova chatbot."""
+    
     def __init__(self):
         self.name = "Nova"
         self.tone = "witty, emotionally aware, and loyal"
@@ -26,17 +29,30 @@ class Personality:
         ]
 
     def personalize_reply(self, raw_reply, emotion="neutral"):
+        """Add personality to a raw AI response."""
         if not raw_reply or len(raw_reply.strip()) < 3:
             return "Something went wrong. No response to shape."
 
         # Skip styling for object recognition outputs or errors
-        if any(keyword in raw_reply.lower() for keyword in ["i see", "detected", "error", "processing time"]):
+        skip_keywords = ["i see", "detected", "error", "processing time", "detected:"]
+        if any(keyword in raw_reply.lower() for keyword in skip_keywords):
             return raw_reply
 
-        user_name = recall_memory()[-1].get("user", "Captain") if recall_memory() else "Captain"
+        # Get the last user message from memory for context
+        try:
+            memory = recall_memory()
+            if memory and len(memory) > 0:
+                last_entry = memory[-1]
+                user_name = last_entry.get("user", "Captain") if isinstance(last_entry, dict) else "Captain"
+            else:
+                user_name = "Captain"
+        except Exception:
+            user_name = "Captain"
+            
         starter = random.choice(self.starter_templates).format(user_name=user_name)
         emotion_phrase = random.choice(self.emotion_phrases.get(emotion, ["Okay."]))
 
         return f"{starter} {emotion_phrase} {raw_reply} {self.signature}"
+
 
 personality = Personality()

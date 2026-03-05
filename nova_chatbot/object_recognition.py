@@ -1,3 +1,7 @@
+"""
+Object recognition using YOLO models.
+"""
+
 import os
 import cv2
 import time
@@ -5,26 +9,96 @@ from ultralytics import YOLO
 from .online_ai import get_online_response
 from .config import config
 
+
 class ObjectRecognizer:
+    """YOLO-based object recognition."""
+    
     def __init__(self):
         self.model = None
         self.load_model()
 
     def load_model(self):
+        """Load the YOLO model."""
         try:
             model_name = config.get('object_recognition', 'model', 'yolov8n.pt')
-            model_path = os.path.join(os.path.dirname(__file__), '..', model_name)
-            self.model = YOLO(model_path)
+            model_path = config.get_model_path()
+            
+            # Try multiple possible paths
+            possible_paths = [
+                model_path,
+                os.path.join(os.path.dirname(__file__), '..', model_name),
+                os.path.join(os.path.dirname(__file__), model_name),
+            ]
+            
+            for path in possible_paths:
+                if os.path.exists(path):
+                    self.model = YOLO(path)
+                    print(f"✅ Loaded YOLO model from: {path}")
+                    return
+                    
+            # If no local model, try downloading
+            print(f"⚠️ Model not found locally, attempting to load: {model_name}")
+            self.model = YOLO(model_name)
+            
         except Exception as e:
             print(f"❌ Failed to load YOLO model: {e}")
             self.model = None
 
     def recognize_objects(self, image_path=None, online_mode=False):
+        """
+        Recognize objects in an image or from camera.
+        
+        Args:
+            image_path: Path to an image file (optional)
+            online_mode: Whether to provide detailed descriptions (requires API)
+        
+        Returns:
+            List of detected objects
+        """
         if image_path:
-            image = cv2.imread(image_path)
-            if image is None:
-                return [f"❌ Failed to read image at {image_path}"]
-            return self._process_image(image, online_mode)
+            return self._process_image_file(image_path, online_mode)
+
+        return self._process_camera(online_mode)
+
+    def _process_image_file(self, image_path, online_mode=False):
+        """Process a single image file."""
+        image = cv2.imread(image_path)
+        if image is None:
+            return [f"❌ Failed to read image at {image_path}"]
+        
+        return self._process_image(image, online_mode)
+
+    def _process_image(self, image, online_mode=False):
+        """Process an image and return detected objects."""
+        if self.model is None:
+            return ["❌ Model not loaded"]
+
+        results = self.model(image)[0]
+        detected = set()
+
+        for box in results.boxes:
+            cls = int(box.cls[0])
+            name = self.model.names.get(cls, f"class_{cls}")
+            detected.add(name)
+
+        if not detected:
+            return ["No objects detected."]
+
+        output = []
+        for obj in detected:
+            if online_mode and config.get_openai_api_key():
+                prompt = f"What is a '{obj}' and what is it used for?"
+                desc, _ = get_online_response(prompt)
+                output.append(f"{obj.capitalize()}: {desc}")
+            else:
+                output.append(f"Detected: {obj}")
+
+        return output
+
+    def _process_camera(self, online_mode=False):
+        """Process camera feed for object detection."""
+        if self.model is None:
+            return ["❌ Model not loaded"]
 
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
@@ -84,30 +158,6 @@ class ObjectRecognizer:
 
         return results_texts
 
-    def _process_image(self, image, online_mode=False):
-        if self.model is None:
-            return ["❌ Model not loaded"]
 
-        results = self.model(image)[0]
-        detected = set()
-
-        for box in results.boxes:
-            cls = int(box.cls[0])
-            name = self.model.names.get(cls, f"class_{cls}")
-            detected.add(name)
-
-        if not detected:
-            return ["No objects detected."]
-
-        output = []
-        for obj in detected:
-            if online_mode:
-                prompt = f"What is a '{obj}' and what is it used for?"
-                desc, _ = get_online_response(prompt)
-                output.append(f"{obj.capitalize()}: {desc}")
-            else:
-                output.append(f"Detected: {obj}")
-
-        return output
-
+# Global instance
 object_recognizer = ObjectRecognizer()

@@ -1,11 +1,32 @@
-openai==2.6.1
-python-dotenv==1.1.1
-pyttsx3==2.99
-SpeechRecognition==3.10.4
-PyAudio==0.2.14
-opencv-python==4.12.0.88
-ultralytics==8.3.223
-requests==2.32.5
-chromadb==1.2.2
-duckduckgo-search==8.1.1
-PyMuPDF==1.26.5
+# Core AI & API
+openai>=1.0.0
+requests>=2.31.0
+
+# Local AI (Ollama)
+ollama>=0.1.0
+
+# Voice
+pyttsx3>=2.90
+SpeechRecognition>=3.10.0
+PyAudio>=0.2.14
+sounddevice>=0.4.6
+
+# Computer Vision & Object Detection
+opencv-python>=4.8.0
+ultralytics>=8.0.0
+
+# Search
+duckduckgo-search>=7.0.0
+
+# File Processing
+PyMuPDF>=1.23.0
+Pillow>=10.0.0
+
+# Memory & Storage
+chromadb>=0.4.0
+
+# System
+psutil>=5.9.0
+
+# Optional: Vosk for offline speech recognition (uncomment if needed)
+# vosk>=0.3.0
