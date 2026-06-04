@@ -1,57 +1,36 @@
 """
-Voice output using pyttsx3 (Windows TTS).
+Voice output using pyttsx3 (Windows TTS) with ElevenLabs support via tts.py.
 """
 
-import pyttsx3
 import threading
 import queue
 import time
+from .config import config
 
 
 class VoiceSystem:
-    """Text-to-speech voice system."""
+    """Text-to-speech voice system with queue-based processing."""
     
     def __init__(self):
-        self.engine = None
         self.voice_queue = queue.Queue()
         self.active = False
         self.thread = None
         self._initialize_engine()
 
     def _initialize_engine(self):
-        """Initialize the TTS engine."""
+        """Initialize the voice system."""
         try:
-            self.engine = pyttsx3.init()
-            self.engine.setProperty('rate', 160)
-            self.engine.setProperty('volume', 0.9)
-            
-            # Try to set a good voice
-            voices = self.engine.getProperty('voices')
-            
-            # Preferred voices (in order of preference)
-            preferred_voices = [
-                'Microsoft David',
-                'Zira',
-                'TTS_MS_EN-US_DAVID_11.0',
-                'english'
-            ]
-            
-            for voice in voices:
-                if any(v.lower() in voice.name.lower() for v in preferred_voices):
-                    self.engine.setProperty('voice', voice.id)
-                    break
-            
             self.active = True
             self._start_consumer_thread()
-            print("✅ Voice system initialized")
-            
+            print("Voice system initialized")
         except Exception as e:
-            print(f"⚠️ Voice init error: {e}")
+            print(f"Voice init error: {e}")
             self.active = False
 
     def _start_consumer_thread(self):
         """Start the background thread that processes voice queue."""
         def consumer():
+            from .tts import speak as tts_speak
             while self.active:
                 try:
                     text = self.voice_queue.get(timeout=1)
@@ -68,10 +47,10 @@ class VoiceSystem:
 
     def _safe_speak(self, text: str):
         """Safely speak text with retry logic."""
+        from .tts import speak as tts_speak
         for attempt in range(3):
             try:
-                self.engine.say(text)
-                self.engine.runAndWait()
+                tts_speak(text)
                 return
             except Exception as e:
                 if attempt < 2:
@@ -99,16 +78,8 @@ class VoiceSystem:
                 self.thread.join(timeout=2)
             except Exception:
                 pass
-        if self.engine:
-            try:
-                self.engine.stop()
-            except Exception:
-                pass
-            del self.engine
-            self.engine = None
 
 
-# Global instance
 voice_system = VoiceSystem()
 
 

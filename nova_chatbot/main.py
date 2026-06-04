@@ -9,16 +9,50 @@ import importlib.util
 
 from .config import config
 from .voice import speak
-from .ai_core import get_ai_response, switch_ai_mode, get_current_mode
+from .ai_core import get_ai_response, switch_ai_mode, get_current_mode, trim_history
 from .local_ai import local_ai
 from .online_ai import get_online_response
-from .vector_memory import recall_memory, store_memory
+from .memory import recall_memory, store_memory
 from .object_recognition import object_recognizer
 from .platform_utils import open_app
 from .web_search import search_web
 from .file_handler import handle_file_upload
 from .command_dispatcher import CommandDispatcher
 from .proactive_messaging import ProactiveMessenger
+from .autonomous import run_autonomous
+import os
+import sys
+import time
+
+try:
+    import readline
+except ImportError:
+    readline = None
+
+_history = []
+_history_index = 0
+
+def _add_to_history(text):
+    global _history, _history_index
+    if not text or (len(_history) > 0 and _history[-1] == text):
+        return
+    _history.append(text)
+    _history_index = len(_history)
+    if len(_history) > 1000:
+        _history = _history[-1000:]
+
+def _get_input_with_history(prompt):
+    global _history_index
+    if readline:
+        readline.set_auto_history(True)
+        readline.readline_history_file(os.path.expanduser("~/.nova_history"))
+    try:
+        text = input(prompt)
+    except EOFError:
+        return None
+    _add_to_history(text.strip())
+    return text.strip()
+import nova_chatbot.audio_input as audio_input
 
 
 def load_plugins():
@@ -61,14 +95,20 @@ def print_help():
     """Print available commands."""
     print("\n📚 Available Commands:")
     print("  scan              - Scan objects with camera")
-    print("  upload <path>    - Upload and process a file")
-    print("  open <app>       - Open an application")
-    print("  search <query>   - Search the web")
-    print("  online mode      - Switch to OpenAI (requires API key)")
-    print("  offline mode     - Switch to local AI (Ollama)")
-    print("  !<plugin>        - Run a plugin")
-    print("  help             - Show this help")
-    print("  exit             - Exit the chatbot")
+    print("  upload <path>     - Upload and process a file")
+    print("  open <app>        - Open an application")
+    print("  search <query>    - Search the web")
+    print("  look <image>      - Analyze an image (GPT-4V style)")
+    print("  plan <task>       - Create a plan for a task")
+    print("  online mode       - Switch to Z.AI GLM-5.1")
+    print("  offline mode      - Switch to local AI (Ollama)")
+    print("  voice on/off      - Enable/disable voice input")
+    print("  export <file>     - Export memory to JSON file")
+    print("  import <file>     - Import memory from JSON file")
+    print("  find <query>      - Search memory for entries")
+    print("  !<plugin>         - Run a plugin")
+    print("  help              - Show this help")
+    print("  exit              - Exit the chatbot")
     print()
 
 
@@ -78,17 +118,17 @@ def main():
     
     # Check configuration
     if config.is_offline_mode():
-        print("📴 Mode: Offline (using local Ollama)")
+        print("[MODE] Offline (using local Ollama)")
     else:
-        api_key = config.get_openai_api_key()
+        api_key = config.get_zai_api_key()
         if api_key:
-            print(f"🌐 Mode: Online ({config.get_ai_model()})")
+            print(f"[MODE] Online (Z.AI GLM-5.1)")
         else:
-            print("⚠️ No API key found. Using offline mode.")
+            print("No API key found. Using offline mode.")
     
     # Check voice
     if not config.is_voice_enabled():
-        print("🔇 Voice output disabled")
+        print("[VOICE] Output disabled")
     
     print(f"\nWelcome to Nova ✨")
     print_help()
@@ -109,10 +149,9 @@ def main():
 
     while True:
         try:
-            try:
-                user_input = input("You: ").strip()
-            except EOFError:
-                print("\nGoodbye!")
+            user_input = _get_input_with_history("You: ")
+            if user_input is None:
+                print("\n[GOODBYE] Goodbye!")
                 if proactive_messenger:
                     proactive_messenger.stop()
                 break
@@ -124,7 +163,7 @@ def main():
             user_input_lower = user_input.lower()
             
             if user_input_lower == "exit":
-                print("👋 Goodbye!")
+                print("[GOODBYE] Goodbye!")
                 if proactive_messenger:
                     proactive_messenger.stop()
                 break
@@ -133,15 +172,51 @@ def main():
                 print_help()
                 continue
 
+            if user_input_lower.startswith("autonomous ") or user_input_lower == "autonomous":
+                cmd = user_input_lower.replace("autonomous ", "").strip()
+                if not cmd:
+                    print("🤖 Autonomous mode: specify 'analyze', 'suggest', 'review', or 'check'")
+                    continue
+                result = run_autonomous(cmd)
+                print(f"Jarvis: {result}")
+                if config.is_voice_enabled():
+                    speak(result)
+                continue
+
             if user_input_lower == "online mode":
-                switch_ai_mode('gpt-4o-mini')
-                print("✅ Switched to Online Mode")
+                switch_ai_mode('glm-5.1')
+                print("[MODE] Switched to Online Mode (Z.AI GLM-5.1)")
                 continue
 
             if user_input_lower == "offline mode":
                 switch_ai_mode('phi-3')
-                print("✅ Switched to Offline Mode")
+                print("[MODE] Switched to Offline Mode")
                 continue
+
+            if user_input_lower == "voice on":
+                try:
+                    audio_input.start_voice_input()
+                    print("[VOICE] Input enabled. Say something!")
+                except FileNotFoundError as e:
+                    print(f"[ERROR] Voice input unavailable: {e}")
+                except Exception as e:
+                    print(f"[ERROR] Could not start voice input: {e}")
+                continue
+
+            if user_input_lower == "voice off":
+                try:
+                    audio_input.stop_voice_input()
+                    print("[VOICE] Input disabled.")
+                except Exception as e:
+                    print(f"[ERROR] Could not stop voice input: {e}")
+                continue
+
+            # Check for voice input result
+            if config.is_memory_enabled():
+                voice_text = audio_input.get_voice_text()
+                if voice_text:
+                    user_input = voice_text
+                    print(f"🎤 You (voice): {user_input}")
 
             # Try command dispatcher first
             response = command_dispatcher.dispatch(user_input)
@@ -154,9 +229,11 @@ def main():
             # Get chat history for context
             if memory_enabled:
                 try:
-                    chat_history = recall_memory(user_input)
+                    chat_history = recall_memory()
+                    model = config.get_ai_model() if not config.is_offline_mode() else 'phi-3'
+                    chat_history = trim_history(chat_history, model)
                 except Exception as e:
-                    print(f"⚠️ Memory error: {e}")
+                    print(f"[ERROR] Memory error: {e}")
                     chat_history = []
             else:
                 chat_history = []

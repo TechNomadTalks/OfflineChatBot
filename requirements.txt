@@ -1,6 +1,7 @@
 # Core AI & API
 openai>=1.0.0
 requests>=2.31.0
+tiktoken>=0.5.0
 
 # Local AI (Ollama)
 ollama>=0.1.0
@@ -10,6 +11,7 @@ pyttsx3>=2.90
 SpeechRecognition>=3.10.0
 PyAudio>=0.2.14
 sounddevice>=0.4.6
+elevenlabs>=0.2.0
 
 # Computer Vision & Object Detection
 opencv-python>=4.8.0
@@ -28,5 +30,5 @@ chromadb>=0.4.0
 # System
 psutil>=5.9.0
 
-# Optional: Vosk for offline speech recognition (uncomment if needed)
-# vosk>=0.3.0
+# Speech Recognition
+vosk>=0.3.0

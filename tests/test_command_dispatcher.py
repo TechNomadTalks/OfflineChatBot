@@ -28,7 +28,7 @@ class TestCommandDispatcher(unittest.TestCase):
     def test_search(self, mock_search_web):
         mock_search_web.return_value = [{"title": "Test", "href": "http://test.com", "body": "Test"}]
         result = self.dispatcher.dispatch("search test")
-        self.assertEqual(result, "- Test\n  http://test.com\n  Test")
+        self.assertEqual(result, "Test\n  http://test.com\n  Test")
 
 if __name__ == '__main__':
     unittest.main()

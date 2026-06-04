@@ -33,12 +33,10 @@ class Personality:
         if not raw_reply or len(raw_reply.strip()) < 3:
             return "Something went wrong. No response to shape."
 
-        # Skip styling for object recognition outputs or errors
         skip_keywords = ["i see", "detected", "error", "processing time", "detected:"]
         if any(keyword in raw_reply.lower() for keyword in skip_keywords):
             return raw_reply
 
-        # Get the last user message from memory for context
         try:
             memory = recall_memory()
             if memory and len(memory) > 0:

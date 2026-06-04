@@ -27,6 +27,13 @@ class Config:
         value = self.get(section, key, str(default))
         return value.lower() in ('true', '1', 'yes', 'on')
 
+    def get_int(self, section, key, default=0):
+        """Get an integer configuration value."""
+        try:
+            return int(self.get(section, key, str(default)))
+        except ValueError:
+            return default
+
     def get_openai_api_key(self):
         """Get OpenAI API key with validation."""
         key = self.get('api_keys', 'openai')
@@ -40,6 +47,44 @@ class Config:
         if key and self._is_placeholder(key):
             return None
         return key
+
+    def get_zai_api_key(self):
+        """Get Z.AI API key with validation."""
+        key = self.get('api_keys', 'zai')
+        if key and self._is_placeholder(key):
+            return None
+        return key
+
+    def get_openai_api_key_fallback(self):
+        """Get OpenAI API key as fallback."""
+        key = self.get('api_keys', 'openai')
+        if key and self._is_placeholder(key):
+            return None
+        return key
+
+    def get_tts_provider(self):
+        """Get TTS provider (elevenlabs or pyttsx3)."""
+        return self.get('tts', 'provider', 'pyttsx3')
+
+    def get_elevenlabs_voice_id(self):
+        """Get ElevenLabs voice ID."""
+        return self.get('tts', 'voice_id', 'pMsXgV2OhLO1IsvrKWfX')
+
+    def get_elevenlabs_stability(self):
+        """Get ElevenLabs stability setting."""
+        return float(self.get('tts', 'stability', '0.5'))
+
+    def get_elevenlabs_similarity_boost(self):
+        """Get ElevenLabs similarity boost setting."""
+        return float(self.get('tts', 'similarity_boost', '0.5'))
+
+    def get_personality_profile(self):
+        """Get personality profile."""
+        return self.get('personality', 'profile', 'jarvis')
+
+    def get_temperature(self):
+        """Get AI temperature."""
+        return float(self.get('personality', 'temperature', '0.7'))
 
     def _is_placeholder(self, value):
         """Check if a value is a placeholder that needs to be replaced."""
