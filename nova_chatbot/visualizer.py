@@ -37,7 +37,8 @@ class Particle:
         self.target_radius = self.orbit_radius
     
     def update(self, activity_level, dt):
-        self.angle += self.angular_velocity * (1 + activity_level * 2)
+        if activity_level > 0:
+            self.angle += self.angular_velocity * (1 + activity_level * 2)
         self.orbit_radius += (self.target_radius - self.orbit_radius) * 0.05
         self.orbit_radius += activity_level * 30 * dt
     
@@ -47,8 +48,8 @@ class Particle:
         return x, y
     
     def get_brightness(self, activity_level):
-        base_brightness = 1.0 + self.z_offset * 0.3
-        activity_brightness = 1.0 + activity_level * 0.5
+        base_brightness = 0.3 + self.z_offset * 0.15
+        activity_brightness = 1.0 + activity_level * 0.7
         return min(1.0, base_brightness * activity_brightness)
 
 

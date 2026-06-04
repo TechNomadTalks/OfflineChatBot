@@ -9,12 +9,21 @@ from .user_profile import format_user_context
 
 
 CURRENT_AI_MODE = 'glm-5.1'
+CURRENT_OFFLINE_MODE = None
 TOKEN_LIMITS = {
     'glm-5.1': 128000,
     'gpt-4o': 128000,
     'gpt-4o-mini': 128000,
     'phi-3': 4096,
 }
+
+
+def is_offline_mode():
+    """Check if offline mode is enabled (runtime override takes precedence)."""
+    global CURRENT_OFFLINE_MODE
+    if CURRENT_OFFLINE_MODE is not None:
+        return CURRENT_OFFLINE_MODE
+    return config.is_offline_mode()
 
 
 def count_tokens(text, model='glm-5.1'):
@@ -62,7 +71,7 @@ def get_ai_response(prompt, chat_history=None):
     Returns:
         Tuple of (response_text, elapsed_time)
     """
-    if config.is_offline_mode():
+    if is_offline_mode():
         return local_ai.generate_local_response(prompt, chat_history or [])
     
     api_key = config.get_zai_api_key()
@@ -83,16 +92,18 @@ def switch_ai_mode(mode):
     Args:
         mode: 'gpt-4o', 'gpt-4o-mini', 'glm-5.1', 'phi-3', or other supported models
     """
-    global CURRENT_AI_MODE
+    global CURRENT_AI_MODE, CURRENT_OFFLINE_MODE
     
     if mode.startswith('gpt') or mode == 'glm-5.1':
         CURRENT_AI_MODE = mode
+        CURRENT_OFFLINE_MODE = False
     else:
         CURRENT_AI_MODE = 'phi-3'
+        CURRENT_OFFLINE_MODE = True
 
 
 def get_current_mode():
     """Get the current AI mode."""
-    if config.is_offline_mode():
+    if is_offline_mode():
         return "offline"
     return f"online ({config.get_ai_model()})"
