@@ -140,7 +140,10 @@ def main():
         username = ask_for_username()
 
     if config.is_visualizer_enabled():
-        start_visualizer(username)
+        try:
+            start_visualizer(config.get_visualizer_username())
+        except Exception as e:
+            print(f"[Visualizer] Failed to start: {e}")
 
     # Load plugins
     plugins = load_plugins()
@@ -152,9 +155,6 @@ def main():
     if config.is_proactive_enabled():
         proactive_messenger = ProactiveMessenger()
         proactive_messenger.start()
-
-    if config.is_visualizer_enabled():
-        start_visualizer(config.get_visualizer_username())
 
     # Get memory setting
     memory_enabled = config.is_memory_enabled()

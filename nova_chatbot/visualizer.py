@@ -87,6 +87,9 @@ class DustVisualizer:
             print("[Visualizer] PyGame not available")
             return
         
+        if self.running or (self.thread and self.thread.is_alive()):
+            return
+        
         self.username = username
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
@@ -163,6 +166,11 @@ class DustVisualizer:
             pygame.quit()
         except Exception as e:
             print(f"[Visualizer] Error: {e}")
+            self.running = False
+            try:
+                pygame.quit()
+            except:
+                pass
     
     def _init_particles(self):
         rng = random.Random(42)
