@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Visualizer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', sans-serif;
+        }
+        canvas { display: block; }
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #fff;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(255, 107, 0, 0.5);
+            pointer-events: none;
+        }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #aaa;
+            font-size: 14px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="ui-overlay" id="username">Welcome User</div>
+    <div class="controls">Press SPACEBAR to trigger speech activity | Click to focus</div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const usernameEl = document.getElementById('username');
+        
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        const PARTICLE_COUNT = 300;
+        const particles = [];
+        
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            
+            reset() {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.sqrt(Math.random()) * 150;
+                this.x = centerX + Math.cos(angle) * radius;
+                this.y = centerY + Math.sin(angle) * radius;
+                this.size = 1 + Math.random() * 2;
+                this.baseSize = this.size;
+                this.baseBrightness = 0.4 + Math.random() * 0.4;
+                this.hue = 25 + Math.random() * 10;
+                this.saturation = 80 + Math.random() * 20;
+                this.alpha = 0.5 + Math.random() * 0.5;
+            }
+            
+            update(activity) {
+                const dx = this.x - centerX;
+                const dy = this.y - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist > 0.1) {
+                    const force = (1 - dist / 200) * activity * 0.5;
+                    this.x -= dx * force * 0.01;
+                    this.y -= dy * force * 0.01;
+                }
+                
+                this.size = this.baseSize * (1 + activity * 2);
+                this.alpha = Math.min(1, this.baseBrightness * (1 + activity));
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size * 2
+                );
+                gradient.addColorStop(0, `hsla(${this.hue}, ${this.saturation}%, 100%, 1)`);
+                gradient.addColorStop(1, `hsla(${this.hue}, ${this.saturation}%, 100%, 0)`);
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(new Particle());
+        }
+        
+        let activityLevel = 0;
+        let targetActivity = 0;
+        let lastTime = performance.now();
+        
+        function setActivity(level) {
+            targetActivity = Math.max(0, Math.min(1, level));
+        }
+        
+        function triggerSpeech() {
+            setActivity(1);
+            setTimeout(() => setActivity(0), 2000 + Math.random() * 1000);
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                triggerSpeech();
+            }
+        });
+        
+        canvas.addEventListener('click', () => triggerSpeech());
+        
+        function animate() {
+            const now = performance.now();
+            const dt = Math.min(0.1, (now - lastTime) / 1000);
+            lastTime = now;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            activityLevel += (targetActivity - activityLevel) * 10 * dt;
+            activityLevel = Math.max(0, Math.min(1, activityLevel));
+            
+            particles.forEach(p => p.update(activityLevel));
+            particles.forEach(p => p.draw());
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        function setUsername(name) {
+            usernameEl.textContent = `Welcome ${name}`;
+        }
+        
+        window.NovaVisualizer = {
+            setActivity,
+            triggerSpeech,
+            setUsername
+        };
+    </script>
+</body>
+</html>
