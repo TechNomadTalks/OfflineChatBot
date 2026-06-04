@@ -109,54 +109,60 @@ class DustVisualizer:
         self._render_text()
     
     def _run(self):
-        pygame.init()
-        pygame.display.init()
-        
-        self.screen = pygame.display.set_mode((600, 600), pygame.NOFRAME)
-        pygame.display.set_caption("Nova Visualizer")
-        pygame.display.set_allow_screensaver(False)
-        
         try:
-            import ctypes
-            from ctypes import wintypes
-            hwnd = pygame.display.get_wm_info()['window']
-            HWND_TOPMOST = -1
-            SWP_NOMOVE = 0x0002
-            SWP_NOSIZE = 0x0001
-            ctypes.windll.user32.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
-        except:
-            pass
-        
-        self.clock = pygame.time.Clock()
-        self._init_particles()
-        self._render_text()
-        
-        self.running = True
-        last_time = time.time()
-        
-        while self.running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
+            pygame.init()
+            pygame.display.init()
+            
+            self.screen = pygame.display.set_mode((600, 600), pygame.NOFRAME)
+            pygame.display.set_caption("Nova Visualizer")
+            pygame.display.set_allow_screensaver(False)
+            
+            try:
+                import ctypes
+                from ctypes import wintypes
+                hwnd = pygame.display.get_wm_info()['window']
+                HWND_TOPMOST = -1
+                SWP_NOMOVE = 0x0002
+                SWP_NOSIZE = 0x0001
+                ctypes.windll.user32.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE)
+            except Exception:
+                pass
+            
+            self.clock = pygame.time.Clock()
+            self._init_particles()
+            self._render_text()
+            
+            self.running = True
+            last_time = time.time()
+            
+            while self.running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
                         self.running = False
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            self.running = False
+                
+                current_time = time.time()
+                dt = current_time - last_time
+                last_time = current_time
+                
+                if dt <= 0 or dt > 1:
+                    dt = 0.016
+                
+                with self._activity_lock:
+                    self.activity_level += (self.target_activity - self.activity_level) * 5 * dt
+                    self.activity_level = max(0.0, min(1.0, self.activity_level))
+                
+                self._update_particles(dt)
+                self._draw()
+                
+                pygame.display.flip()
+                self.clock.tick(60)
             
-            current_time = time.time()
-            dt = current_time - last_time
-            last_time = current_time
-            
-            with self._activity_lock:
-                self.activity_level += (self.target_activity - self.activity_level) * 5 * dt
-                self.activity_level = max(0.0, min(1.0, self.activity_level))
-            
-            self._update_particles(dt)
-            self._draw()
-            
-            pygame.display.flip()
-            self.clock.tick(60)
-        
-        pygame.quit()
+            pygame.quit()
+        except Exception as e:
+            print(f"[Visualizer] Error: {e}")
     
     def _init_particles(self):
         rng = random.Random(42)

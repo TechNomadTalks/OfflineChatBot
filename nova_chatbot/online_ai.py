@@ -26,7 +26,8 @@ def get_online_response(prompt: str, model: str = None) -> tuple[str, float]:
     if not api_key:
         api_key = config.get_openai_api_key_fallback()
         if not api_key:
-            return "[WARN] No API key configured. Set Z.AI key in config.ini or use OPENAI_API_KEY as fallback.", round(time.time() - start_time, 2)
+            # DEV/TEST FALLBACK - don't crash, just return help text
+            return "[DEV MODE] No API key configured. Running in offline/local mode. Set Z.AI key in config.ini or start Ollama for local AI.", round(time.time() - start_time, 2)
         base_url = None
     else:
         base_url = "https://api.z.ai/api/paas/v4/"

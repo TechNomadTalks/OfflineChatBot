@@ -138,6 +138,7 @@ def main():
     username = get_username()
     if not username or username == "User":
         username = ask_for_username()
+
     if config.is_visualizer_enabled():
         start_visualizer(username)
 
