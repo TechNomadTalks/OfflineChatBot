@@ -8,6 +8,31 @@ An offline-capable AI chatbot with voice, vision, and smart features.
 - **Permissions**: Plugin sandbox system restricts commands per plugin via `[permissions]` config.
 - **System Control**: Shutdown/restart commands require explicit permission in config.
 
+### Voice Options
+
+| Provider | Type | Description |
+|----------|------|-------------|
+| **piper** (default) | Local | Custom Jarvis voice clone - British RP accent, sounds like Iron Man's Jarvis |
+| **elevenlabs** | Cloud | High-quality AI voices (requires API key) |
+| **pyttsx3** | Local | Windows TTS fallback |
+
+To use the Jarvis voice model:
+```bash
+# Install Piper
+pip install piper-tts
+
+# Download Jarvis voice model
+mkdir -p nova_chatbot/models/jarvis
+wget -O nova_chatbot/models/jarvis/jarvis-medium.onnx \
+  https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/medium/jarvis-medium.onnx
+wget -O nova_chatbot/models/jarvis/jarvis-medium.onnx.json \
+  https://huggingface.co/jgkawell/jarvis/resolve/main/en/en_GB/jarvis/medium/jarvis-medium.onnx.json
+
+# Set in config.ini
+[tts]
+provider = piper
+```
+
 ## Features
 
 ### AI Modes
