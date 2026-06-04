@@ -33,15 +33,15 @@ class ObjectRecognizer:
             for path in possible_paths:
                 if os.path.exists(path):
                     self.model = YOLO(path)
-                    print(f"✅ Loaded YOLO model from: {path}")
+                    print(f"[OK] Loaded YOLO model from: {path}")
                     return
                     
             # If no local model, try downloading
-            print(f"⚠️ Model not found locally, attempting to load: {model_name}")
+            print(f"[WARN] Model not found locally, attempting to load: {model_name}")
             self.model = YOLO(model_name)
             
         except Exception as e:
-            print(f"❌ Failed to load YOLO model: {e}")
+            print(f"[ERROR] Failed to load YOLO model: {e}")
             self.model = None
 
     def recognize_objects(self, image_path=None, online_mode=False):
@@ -64,14 +64,14 @@ class ObjectRecognizer:
         """Process a single image file."""
         image = cv2.imread(image_path)
         if image is None:
-            return [f"❌ Failed to read image at {image_path}"]
+            return [f"[ERROR] Failed to read image at {image_path}"]
         
         return self._process_image(image, online_mode)
 
     def _process_image(self, image, online_mode=False):
         """Process an image and return detected objects."""
         if self.model is None:
-            return ["❌ Model not loaded"]
+            return ["[ERROR] Model not loaded"]
 
         results = self.model(image)[0]
         detected = set()
@@ -86,7 +86,8 @@ class ObjectRecognizer:
 
         output = []
         for obj in detected:
-            if online_mode and config.get_openai_api_key():
+            api_key = config.get_zai_api_key() or config.get_openai_api_key_fallback()
+            if online_mode and api_key:
                 prompt = f"What is a '{obj}' and what is it used for?"
                 desc, _ = get_online_response(prompt)
                 output.append(f"{obj.capitalize()}: {desc}")
@@ -98,13 +99,13 @@ class ObjectRecognizer:
     def _process_camera(self, online_mode=False):
         """Process camera feed for object detection."""
         if self.model is None:
-            return ["❌ Model not loaded"]
+            return ["[ERROR] Model not loaded"]
 
         cap = cv2.VideoCapture(0)
         if not cap.isOpened():
-            return ["❌ Camera not available"]
+            return ["[ERROR] Camera not available"]
 
-        print("🔍 Press 'q' to stop scanning.")
+        print("[SCAN] Press 'q' to stop scanning.")
         results_texts = []
 
         try:

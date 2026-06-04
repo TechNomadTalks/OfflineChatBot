@@ -64,13 +64,13 @@ class LocalAI:
             return text.strip(), round(time.time() - start_time, 2)
             
         except requests.exceptions.ConnectionError:
-            return "❌ Cannot connect to Ollama. Make sure Ollama is running (ollama serve)", round(time.time() - start_time, 2)
+            return "[ERROR] Cannot connect to Ollama. Make sure Ollama is running (ollama serve)", round(time.time() - start_time, 2)
         except requests.exceptions.Timeout:
-            return "❌ Request timed out. Try a smaller model or increase timeout.", round(time.time() - start_time, 2)
+            return "[ERROR] Request timed out. Try a smaller model or increase timeout.", round(time.time() - start_time, 2)
         except requests.exceptions.RequestException as e:
             return f"Local AI error: {e}", round(time.time() - start_time, 2)
         except Exception as e:
-            return f"❌ Unexpected error: {e}", round(time.time() - start_time, 2)
+            return f"[ERROR] Unexpected error: {e}", round(time.time() - start_time, 2)
 
     def is_available(self) -> bool:
         """Check if Ollama is running and accessible."""

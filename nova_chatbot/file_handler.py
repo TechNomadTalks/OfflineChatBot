@@ -19,7 +19,7 @@ def handle_file_upload(filepath):
         String result of file processing
     """
     if not os.path.exists(filepath):
-        return f"❌ File not found at '{filepath}'."
+        return f"[ERROR] File not found at '{filepath}'."
 
     _, extension = os.path.splitext(filepath)
     extension = extension.lower()
@@ -31,7 +31,7 @@ def handle_file_upload(filepath):
     elif extension == '.pdf':
         return handle_pdf_file(filepath)
     else:
-        return f"⚠️ Unsupported file type: {extension}\nSupported types: .jpg, .png, .bmp, .gif, .txt, .pdf"
+        return f"[WARN] Unsupported file type: {extension}\nSupported types: .jpg, .png, .bmp, .gif, .txt, .pdf"
 
 
 def handle_image_file(filepath):
@@ -45,7 +45,7 @@ def handle_image_file(filepath):
         results = object_recognizer.recognize_objects(image_path=filepath)
         return "\n".join(results)
     except Exception as e:
-        return f"❌ Error processing image: {str(e)}"
+        return f"[ERROR] Error processing image: {str(e)}"
 
 
 def handle_text_file(filepath):
@@ -63,9 +63,9 @@ def handle_text_file(filepath):
             with open(filepath, 'r', encoding='latin-1') as f:
                 return f.read()
         except Exception as e:
-            return f"❌ Error reading text file: {e}"
+            return f"[ERROR] Error reading text file: {e}"
     except Exception as e:
-        return f"❌ Error reading text file: {e}"
+        return f"[ERROR] Error reading text file: {e}"
 
 
 def handle_pdf_file(filepath):
@@ -77,7 +77,7 @@ def handle_pdf_file(filepath):
             text += page.get_text()
             
         if not text.strip():
-            return "⚠️ No text found in PDF. It may be image-based (scanned)."
+            return "[WARN] No text found in PDF. It may be image-based (scanned)."
         
         # Limit output length
         if len(text) > 5000:
@@ -85,4 +85,4 @@ def handle_pdf_file(filepath):
         return text
         
     except Exception as e:
-        return f"❌ Error reading PDF file: {e}"
+        return f"[ERROR] Error reading PDF file: {e}"

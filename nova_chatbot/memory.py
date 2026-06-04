@@ -36,13 +36,13 @@ def recall_memory(query=None):
             if isinstance(data, list):
                 return data
             else:
-                print("⚠️ Warning: memory.json does not contain a list. Resetting memory.")
+                print("[WARN] Warning: memory.json does not contain a list. Resetting memory.")
                 return []
     except json.JSONDecodeError:
-        print("⚠️ Warning: memory.json is corrupted or invalid JSON. Resetting memory.")
+        print("[WARN] Warning: memory.json is corrupted or invalid JSON. Resetting memory.")
         return []
     except Exception as e:
-        print(f"⚠️ Error reading memory: {e}")
+        print(f"[WARN] Error reading memory: {e}")
         return []
 
 

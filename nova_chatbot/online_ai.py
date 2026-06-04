@@ -25,7 +25,7 @@ def get_online_response(prompt: str, model: str = None) -> tuple[str, float]:
     if not api_key:
         api_key = config.get_openai_api_key_fallback()
         if not api_key:
-            return "⚠️ No API key configured. Set Z.AI key in config.ini or use OPENAI_API_KEY as fallback.", round(time.time() - start_time, 2)
+            return "[WARN] No API key configured. Set Z.AI key in config.ini or use OPENAI_API_KEY as fallback.", round(time.time() - start_time, 2)
         base_url = None
     else:
         base_url = "https://api.z.ai/api/paas/v4/"
@@ -47,7 +47,7 @@ def get_online_response(prompt: str, model: str = None) -> tuple[str, float]:
         stream = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
+            temperature=config.get_temperature(),
             stream=True
         )
 
@@ -60,8 +60,8 @@ def get_online_response(prompt: str, model: str = None) -> tuple[str, float]:
         return full_response.strip(), round(time.time() - start_time, 2)
 
     except openai.AuthenticationError:
-        return "⚠️ Authentication failed. Please check your API key in config.ini.", round(time.time() - start_time, 2)
+        return "[WARN] Authentication failed. Please check your API key in config.ini.", round(time.time() - start_time, 2)
     except openai.RateLimitError:
-        return "⚠️ Rate limit exceeded. Please wait a moment and try again.", round(time.time() - start_time, 2)
+        return "[WARN] Rate limit exceeded. Please wait a moment and try again.", round(time.time() - start_time, 2)
     except Exception as e:
-        return f"❌ Error: {str(e)}", round(time.time() - start_time, 2)
+        return f"[ERROR] {str(e)}", round(time.time() - start_time, 2)

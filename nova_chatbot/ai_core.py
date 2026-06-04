@@ -5,7 +5,6 @@ AI core - handles switching between online and offline AI models.
 from .config import config
 from .online_ai import get_online_response
 from .local_ai import local_ai
-import tiktoken
 
 
 CURRENT_AI_MODE = 'glm-5.1'
@@ -19,6 +18,10 @@ TOKEN_LIMITS = {
 
 def count_tokens(text, model='glm-5.1'):
     """Count tokens in text using tiktoken."""
+    try:
+        import tiktoken
+    except ImportError:
+        return 0
     try:
         enc = tiktoken.encoding_for_model(model)
     except KeyError:
@@ -65,7 +68,7 @@ def get_ai_response(prompt, chat_history=None):
     if not api_key:
         api_key = config.get_openai_api_key_fallback()
         if not api_key:
-            print("⚠️ No API key found. Falling back to local AI (Ollama).")
+            print("[WARN] No API key found. Falling back to local AI (Ollama).")
             return local_ai.generate_local_response(prompt, chat_history or [])
     
     model = config.get_ai_model()

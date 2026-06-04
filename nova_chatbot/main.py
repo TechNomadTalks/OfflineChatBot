@@ -73,9 +73,9 @@ def load_plugins():
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
                 plugins[name] = module
-                print(f"✅ Loaded plugin: {name}")
+                print(f"[OK] Loaded plugin: {name}")
             except Exception as e:
-                print(f"⚠️ Failed loading plugin '{name}': {e}")
+                print(f"[WARN] Failed loading plugin '{name}': {e}")
     
     return plugins
 
@@ -93,7 +93,7 @@ def print_banner():
 
 def print_help():
     """Print available commands."""
-    print("\n📚 Available Commands:")
+    print("\n[COMMANDS] Available Commands:")
     print("  scan              - Scan objects with camera")
     print("  upload <path>     - Upload and process a file")
     print("  open <app>        - Open an application")
@@ -130,7 +130,7 @@ def main():
     if not config.is_voice_enabled():
         print("[VOICE] Output disabled")
     
-    print(f"\nWelcome to Nova ✨")
+    print(f"\nWelcome to Nova")
     print_help()
 
     # Load plugins
@@ -175,7 +175,7 @@ def main():
             if user_input_lower.startswith("autonomous ") or user_input_lower == "autonomous":
                 cmd = user_input_lower.replace("autonomous ", "").strip()
                 if not cmd:
-                    print("🤖 Autonomous mode: specify 'analyze', 'suggest', 'review', or 'check'")
+                    print("[AI] Autonomous mode: specify 'analyze', 'suggest', 'review', or 'check'")
                     continue
                 result = run_autonomous(cmd)
                 print(f"Jarvis: {result}")
@@ -216,7 +216,7 @@ def main():
                 voice_text = audio_input.get_voice_text()
                 if voice_text:
                     user_input = voice_text
-                    print(f"🎤 You (voice): {user_input}")
+                    print(f"[VOICE] You (voice): {user_input}")
 
             # Try command dispatcher first
             response = command_dispatcher.dispatch(user_input)
@@ -251,13 +251,13 @@ def main():
                 try:
                     store_memory(user_input, response)
                 except Exception as e:
-                    print(f"⚠️ Memory store error: {e}")
+                    print(f"[WARN] Memory store error: {e}")
 
         except KeyboardInterrupt:
             print("\n\nInterrupted by user. Exiting.")
             break
         except Exception as e:
-            print(f"❌ Unexpected error: {e}")
+            print(f"[ERROR] Unexpected error: {e}")
             import traceback
             traceback.print_exc()
 
@@ -279,6 +279,13 @@ if __name__ == "__main__":
         else:
             # If the command is not a dispatcher command, try AI
             chat_history = []
+            if config.is_memory_enabled():
+                try:
+                    chat_history = recall_memory()
+                    model = config.get_ai_model() if not config.is_offline_mode() else 'phi-3'
+                    chat_history = trim_history(chat_history, model)
+                except Exception:
+                    chat_history = []
             response, _ = get_ai_response(command, chat_history)
             print(f"Nova: {response}")
     else:

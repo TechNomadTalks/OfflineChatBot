@@ -10,6 +10,33 @@ from .config import config
 from .memory import recall_memory
 
 
+JARVIS_MESSAGES = [
+    "How can I assist you today?",
+    "I'm monitoring our conversation history.",
+    "Ready for your next request.",
+    "I'm here to help with any task.",
+]
+
+NOVA_MESSAGES = [
+    "Just thinking...",
+    "Did you know that the first computer bug was a real moth?",
+    "I'm learning new things every day!",
+    "I'm here if you need anything.",
+    "What's on your mind?",
+    "I was just reading about the history of AI. It's fascinating!",
+    "I could help you with coding, file processing, or just chatting!",
+    "The weather outside is... well, I don't actually know. I'm stuck in here!",
+]
+
+CASUAL_MESSAGES = [
+    "Hey!",
+    "What's up?",
+    "Just checking in!",
+    "Need anything?",
+    "I'm here for you!",
+]
+
+
 class ProactiveMessenger(threading.Thread):
     """Background thread that occasionally sends proactive messages."""
     
@@ -17,16 +44,15 @@ class ProactiveMessenger(threading.Thread):
         super().__init__()
         self.daemon = True
         self._running = True
-        self.messages = [
-            "Just thinking...",
-            "Did you know that the first computer bug was a real moth?",
-            "I'm learning new things every day!",
-            "I'm here if you need anything.",
-            "What's on your mind?",
-            "I was just reading about the history of AI. It's fascinating!",
-            "I could help you with coding, file processing, or just chatting!",
-            "The weather outside is... well, I don't actually know. I'm stuck in here!",
-        ]
+        self.personality = config.get_personality_profile()
+        
+        if self.personality == 'jarvis':
+            self.messages = JARVIS_MESSAGES
+        elif self.personality == 'casual':
+            self.messages = CASUAL_MESSAGES
+        else:
+            self.messages = NOVA_MESSAGES
+        
         self.min_interval = config.get_int('proactive', 'min_interval', 120)
         self.max_interval = config.get_int('proactive', 'max_interval', 300)
         self.max_memory_entries = config.get_int('proactive', 'max_memory_entries', 5)

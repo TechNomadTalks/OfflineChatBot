@@ -6,6 +6,7 @@ import threading
 import queue
 import time
 from .config import config
+from .tts import speak as tts_speak
 
 
 class VoiceSystem:
@@ -30,7 +31,6 @@ class VoiceSystem:
     def _start_consumer_thread(self):
         """Start the background thread that processes voice queue."""
         def consumer():
-            from .tts import speak as tts_speak
             while self.active:
                 try:
                     text = self.voice_queue.get(timeout=1)
@@ -47,7 +47,6 @@ class VoiceSystem:
 
     def _safe_speak(self, text: str):
         """Safely speak text with retry logic."""
-        from .tts import speak as tts_speak
         for attempt in range(3):
             try:
                 tts_speak(text)

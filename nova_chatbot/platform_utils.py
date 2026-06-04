@@ -47,7 +47,7 @@ def open_app_windows(app_name):
                 exe_paths.append(found)
 
         if not exe_paths:
-            return f"❌ Could not find executable for '{app_name}'."
+            return f"[ERROR] Could not find executable for '{app_name}'."
 
         exe_path = exe_paths[0]
         subprocess.Popen(shlex.quote(exe_path), shell=True)
@@ -60,13 +60,13 @@ def open_app_macos(app_name):
         subprocess.run(["open", "-a", app_name], check=True)
         return f"Opening {app_name}..."
     except FileNotFoundError:
-        return f"❌ Application '{app_name}' not found."
+        return f"[ERROR] Application '{app_name}' not found."
     except subprocess.CalledProcessError:
-        return f"❌ Failed to open '{app_name}'."
+        return f"[ERROR] Failed to open '{app_name}'."
 
 def open_app_linux(app_name):
     try:
         subprocess.Popen([app_name])
         return f"Opening {app_name}..."
     except FileNotFoundError:
-        return f"❌ Command to open '{app_name}' not found. Make sure it's in your PATH."
+        return f"[ERROR] Command to open '{app_name}' not found. Make sure it's in your PATH."

@@ -2,6 +2,7 @@
 Command dispatcher - handles special commands.
 """
 
+import os
 from .platform_utils import open_app
 from .web_search import search_web
 from .file_handler import handle_file_upload
@@ -71,19 +72,19 @@ class CommandDispatcher:
     def upload(self, args):
         """Handle file upload."""
         if not args:
-            return "⚠️ Please provide a file path. Usage: upload <filepath>"
+            return "[ERROR] Please provide a file path. Usage: upload <filepath>"
         return handle_file_upload(args)
 
     def open_app(self, args):
         """Open an application."""
         if not args:
-            return "⚠️ Please provide an app name. Usage: open <appname>"
+            return "[ERROR] Please provide an app name. Usage: open <appname>"
         return open_app(args)
 
     def search(self, args):
         """Search the web."""
         if not args:
-            return "⚠️ Please provide a search query. Usage: search <query>"
+            return "[ERROR] Please provide a search query. Usage: search <query>"
         results = search_web(args)
         if not results:
             return "No search results found."

@@ -111,7 +111,11 @@ class Config:
 
     def get_memory_max_entries(self):
         """Get maximum memory entries."""
-        return int(self.get('memory', 'max_entries', 50))
+        return self.get_int('memory', 'max_entries', 50)
+
+    def get_raw(self, section, key, default=None):
+        """Get a configuration value without placeholder stripping."""
+        return self.config.get(section, key, fallback=default)
 
     def is_proactive_enabled(self):
         """Check if proactive messaging is enabled."""
