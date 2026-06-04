@@ -21,6 +21,7 @@ from .command_dispatcher import CommandDispatcher
 from .proactive_messaging import ProactiveMessenger
 from .autonomous import run_autonomous
 from .visualizer import start_visualizer, stop_visualizer
+from .web_visualizer import start_visualizer_server
 from .user_profile import get_username, ask_for_username, update_preference, learn_info, get_user_context, format_user_context
 import nova_chatbot.audio_input as audio_input
 
@@ -144,6 +145,13 @@ def main():
             start_visualizer(config.get_visualizer_username())
         except Exception as e:
             print(f"[Visualizer] Failed to start: {e}")
+    
+    if config.is_web_visualizer_enabled():
+        try:
+            start_visualizer_server()
+            print(f"[Visualizer] Web visualizer running at http://localhost:{config.get_web_visualizer_port()}")
+        except Exception as e:
+            print(f"[Visualizer] Web server failed: {e}")
 
     # Load plugins
     plugins = load_plugins()

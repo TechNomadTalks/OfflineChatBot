@@ -132,6 +132,14 @@ class Config:
     def get_visualizer_particle_count(self):
         """Get particle count for visualizer."""
         return self.get_int('visualizer', 'particle_count', 250)
+    
+    def is_web_visualizer_enabled(self):
+        """Check if web visualizer is enabled."""
+        return self.get_boolean('web_visualizer', 'enabled', False)
+    
+    def get_web_visualizer_port(self):
+        """Get web visualizer port."""
+        return self.get_int('web_visualizer', 'port', 8080)
 
     def get_model_path(self):
         """Get the path to the YOLO model."""
