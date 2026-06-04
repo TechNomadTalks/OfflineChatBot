@@ -96,12 +96,14 @@ class DustVisualizer:
     
     def stop(self):
         self.running = False
+        self.thread = None
         if self.screen:
             try:
                 pygame.display.quit()
                 pygame.quit()
             except:
                 pass
+        self.screen = None
     
     def set_activity(self, level):
         with self._activity_lock:
