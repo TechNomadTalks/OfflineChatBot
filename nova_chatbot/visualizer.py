@@ -97,13 +97,18 @@ class DustVisualizer:
     def stop(self):
         self.running = False
         self.thread = None
-        if self.screen:
+        if pygame_AVAILABLE and self.screen:
             try:
                 pygame.display.quit()
                 pygame.quit()
             except:
                 pass
         self.screen = None
+        self.clock = None
+        self.activity_level = 0.0
+        self.target_activity = 0.0
+        self.font = None
+        self.text_surface = None
     
     def set_activity(self, level):
         with self._activity_lock:
@@ -184,7 +189,7 @@ class DustVisualizer:
             p.update(self.activity_level, dt)
     
     def _render_text(self):
-        if not pygame.font:
+        if not pygame_AVAILABLE or not pygame.font:
             return
         try:
             self.font = pygame.font.SysFont('segoeui', 36, bold=True)
