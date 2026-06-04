@@ -5,6 +5,7 @@ AI core - handles switching between online and offline AI models.
 from .config import config
 from .online_ai import get_online_response
 from .local_ai import local_ai
+from .user_profile import format_user_context
 
 
 CURRENT_AI_MODE = 'glm-5.1'

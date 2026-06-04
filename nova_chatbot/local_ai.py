@@ -5,6 +5,7 @@ Local AI integration using Ollama.
 import requests
 import time
 from typing import List, Dict, Tuple, Optional
+from .user_profile import format_user_context
 
 
 class LocalAI:
@@ -28,11 +29,11 @@ class LocalAI:
         """
         start_time = time.time()
         
-        # Build context from chat history
+        user_context = format_user_context()
         context = ""
         if chat_history and len(chat_history) > 0:
             context = "Previous conversation:\n"
-            for entry in chat_history[-5:]:  # Use last 5 entries
+            for entry in chat_history[-5:]:
                 if isinstance(entry, dict):
                     user_msg = entry.get('user', '')
                     bot_msg = entry.get('bot', entry.get('nova', ''))
@@ -42,7 +43,8 @@ class LocalAI:
                         context += f"Nova: {bot_msg}\n"
             context += "\n"
         
-        full_prompt = context + f"User: {prompt}\nNova:" if context else prompt
+        user_prefix = f"{user_context}\n" if user_context else ""
+        full_prompt = context + f"{user_prefix}User: {prompt}\nNova:" if context else f"{user_prefix}User: {prompt}\nNova:"
 
         try:
             response = requests.post(

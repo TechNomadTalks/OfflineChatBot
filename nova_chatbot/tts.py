@@ -203,7 +203,28 @@ tts_provider = create_tts_provider()
 
 def speak(text: str) -> bool:
     """Speak text using the configured TTS provider."""
-    return tts_provider.speak(text)
+    _signal_speaking_start()
+    try:
+        result = tts_provider.speak(text)
+        return result
+    finally:
+        _signal_speaking_end()
+
+
+def _signal_speaking_start():
+    try:
+        from .visualizer import set_visualizer_activity
+        set_visualizer_activity(1.0)
+    except ImportError:
+        pass
+
+
+def _signal_speaking_end():
+    try:
+        from .visualizer import set_visualizer_activity
+        set_visualizer_activity(0.0)
+    except ImportError:
+        pass
 
 
 def is_available() -> bool:

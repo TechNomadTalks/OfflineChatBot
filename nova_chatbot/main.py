@@ -20,17 +20,19 @@ from .file_handler import handle_file_upload
 from .command_dispatcher import CommandDispatcher
 from .proactive_messaging import ProactiveMessenger
 from .autonomous import run_autonomous
-import os
-import sys
-import time
+from .visualizer import start_visualizer, stop_visualizer
+from .user_profile import get_username, ask_for_username, update_preference, learn_info, get_user_context, format_user_context
+import nova_chatbot.audio_input as audio_input
+
+
+_history = []
+_history_index = 0
 
 try:
     import readline
 except ImportError:
     readline = None
 
-_history = []
-_history_index = 0
 
 def _add_to_history(text):
     global _history, _history_index
@@ -40,6 +42,7 @@ def _add_to_history(text):
     _history_index = len(_history)
     if len(_history) > 1000:
         _history = _history[-1000:]
+
 
 def _get_input_with_history(prompt):
     global _history_index
@@ -52,7 +55,6 @@ def _get_input_with_history(prompt):
         return None
     _add_to_history(text.strip())
     return text.strip()
-import nova_chatbot.audio_input as audio_input
 
 
 def load_plugins():
@@ -133,6 +135,12 @@ def main():
     print(f"\nWelcome to Nova")
     print_help()
 
+    username = get_username()
+    if not username or username == "User":
+        username = ask_for_username()
+    if config.is_visualizer_enabled():
+        start_visualizer(username)
+
     # Load plugins
     plugins = load_plugins()
     
@@ -144,6 +152,9 @@ def main():
         proactive_messenger = ProactiveMessenger()
         proactive_messenger.start()
 
+    if config.is_visualizer_enabled():
+        start_visualizer(config.get_visualizer_username())
+
     # Get memory setting
     memory_enabled = config.is_memory_enabled()
 
@@ -154,6 +165,7 @@ def main():
                 print("\n[GOODBYE] Goodbye!")
                 if proactive_messenger:
                     proactive_messenger.stop()
+                stop_visualizer()
                 break
 
             if not user_input:
@@ -166,6 +178,7 @@ def main():
                 print("[GOODBYE] Goodbye!")
                 if proactive_messenger:
                     proactive_messenger.stop()
+                stop_visualizer()
                 break
 
             if user_input_lower == "help":
@@ -246,12 +259,19 @@ def main():
             if config.is_voice_enabled():
                 speak(response)
 
-            # Store in memory
             if memory_enabled:
                 try:
                     store_memory(user_input, response)
                 except Exception as e:
                     print(f"[WARN] Memory store error: {e}")
+
+            if "what is your name" in user_input.lower() or "your name" in user_input.lower():
+                learn_info("name_preference", "asked")
+            if "i am" in user_input.lower() or "i'm" in user_input.lower():
+                import re
+                match = re.search(r"(?:i am|i'm)\s+(\w+)", user_input, re.IGNORECASE)
+                if match:
+                    learn_info("name", match.group(1))
 
         except KeyboardInterrupt:
             print("\n\nInterrupted by user. Exiting.")

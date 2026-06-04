@@ -121,6 +121,18 @@ class Config:
         """Check if proactive messaging is enabled."""
         return self.get_boolean('proactive', 'enabled', True)
 
+    def is_visualizer_enabled(self):
+        """Check if visualizer is enabled."""
+        return self.get_boolean('visualizer', 'enabled', False)
+
+    def get_visualizer_username(self):
+        """Get visualizer username."""
+        return self.get('visualizer', 'username', 'User')
+
+    def get_visualizer_particle_count(self):
+        """Get particle count for visualizer."""
+        return self.get_int('visualizer', 'particle_count', 250)
+
     def get_model_path(self):
         """Get the path to the YOLO model."""
         model_name = self.get('object_recognition', 'model', 'yolov8n.pt')

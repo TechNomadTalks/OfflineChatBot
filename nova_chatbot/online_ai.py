@@ -5,6 +5,7 @@ Online AI integration using Z.AI GLM-5.1 (OpenAI-compatible API).
 import time
 import openai
 from .config import config
+from .user_profile import format_user_context
 
 
 def get_online_response(prompt: str, model: str = None) -> tuple[str, float]:
@@ -44,9 +45,15 @@ def get_online_response(prompt: str, model: str = None) -> tuple[str, float]:
         
         client = openai.OpenAI(**client_kwargs)
         
+        user_context = format_user_context()
+        messages = []
+        if user_context:
+            messages.append({"role": "system", "content": user_context})
+        messages.append({"role": "user", "content": prompt})
+        
         stream = client.chat.completions.create(
             model=model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
             temperature=config.get_temperature(),
             stream=True
         )
